@@ -1,0 +1,128 @@
+# Installation of GROMACS 2018.6 and PLUMED 2.5.2 on CENTOS                                                             
+# header - get centos from docker
+BootStrap: docker
+From: centos:7
+
+# update yum (similar to apt-get in ubuntu)
+%post
+    yum update -y && \
+    yum -y install dnf && \
+    dnf makecache --refresh && \
+    rm -rf /var/lib/apt/lists/*
+
+# install required libraries
+%post
+    yum -y install flex bison rpm patch vim gcc gcc-c++ glib-devel git python3 vim-common perl gnupg2 wget make ca-certificates && \
+    yum -y install --enablerepo=extras epel-release && \
+    yum -y remove ipa-common ipa-common-client ipa-client && \
+    yum -y install kernel-debug-devel dkms
+
+# install gcc 
+%post                                                                                                                   
+    yum -y update && \
+    dnf install -y tar bzip2 automake pciutils elfutils-libelf-devel libglvnd-devel iptables firewalld vim bind-utils && \
+    distribution=rhel7 
+    ARCH=$( /bin/arch )
+    yum -y install centos-release-scl && \
+    sed -i 's/7/7.6.1810/g; s|^#\s*\(baseurl=http://\)mirror|\1vault|g; /mirrorlist/d' /etc/yum.repos.d/CentOS-SCLo-*.repo && \
+    yum -y install -y devtoolset-6
+    source /opt/rh/devtoolset-6/enable
+
+%environment
+    export PATH=/opt/rh/devtoolset-6/root/usr/bin:$PATH
+
+%post
+    gcc -v
+
+%post
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://download.open-mpi.org/release/open-mpi/v2.0/openmpi-2.0.2.tar.gz && \
+    mkdir -p /var/tmp && tar -x -f /var/tmp/openmpi-2.0.2.tar.gz -C /var/tmp -z && \
+    cd /var/tmp/openmpi-2.0.2 && \
+    ./configure --prefix=/usr/local && \
+    make -j 8 && \
+    make install 
+
+%post
+    mpicc -v   
+
+# install PLUMED 2.5.2                                                                                                 
+%post                                                                                                                  
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/plumed/plumed2/releases/download/v2.5.2/plumed-2.5.2.tgz && \
+    mkdir -p /var/tmp && tar -x -f /var/tmp/plumed-2.5.2.tgz -C /var/tmp -z && \
+    cd /var/tmp/plumed-2.5.2 && \
+    ./configure --prefix=/usr/local --enable-mpi --enable-rpath --enable-modules=all CXX=mpicxx CC=mpicc && \
+    make -j 4 && \
+    make install && \
+    source /var/tmp/plumed-2.5.2/sourceme.sh
+    rm -rf /var/tmp/plumed-2.5.2 /var/tmp/plumed-2.5.2.tgz                                                             
+
+# install cmake version 3.15                                                                                           
+%post                                                                                                                  
+    wget -P /var/tmp -q -nc --no-check-certificate https://cmake.org/files/v3.15/cmake-3.15.0-Linux-x86_64.sh && \
+    mkdir -p /usr/local && \
+    sh /var/tmp/cmake-3.15.0-Linux-x86_64.sh --prefix=/usr/local --skip-license && \
+    rm -rf /var/tmp/cmake-3.15-Linux-x86_64.sh
+
+#%environment                                                                                                            
+    #export PATH=/usr/local/bin:$PATH
+
+# install GROMACS
+# https://github.com/gromacs/gromacs.git
+%post
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp ftp://ftp.gromacs.org/pub/gromacs/gromacs-2018.6.tar.gz && \
+    mkdir -p /var/tmp && tar -x -f /var/tmp/gromacs-2018.6.tar.gz -C /var/tmp -z && \
+    cd /var/tmp/gromacs-2018.6
+
+#&& \
+#    git clone --depth=1 --branch v2018.6 https://github.com/gromacs/gromacs.git gromacs && \
+#    cd /var/tmp/gromacs
+
+%environment
+    export PATH=/usr/local/bin:$PATH
+    export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH 
+    export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+    export PLUMED_KERNEL=/usr/local/lib/libplumedKernel.so
+
+%post
+#environment
+    export PATH=/usr/local/bin:$PATH                                                                                    
+    export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH                                                                    
+    export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH                                                              
+    export PLUMED_KERNEL=/usr/local/lib/libplumedKernel.so
+    plumed patch -p -e gromacs-2018.6
+
+%post
+    mkdir -p /var/tmp/gromacs-2018.6/build && \
+    cd /var/tmp/gromacs-2018.6/build
+
+%post
+    cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DGMX_X11=OFF \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DGMX_BUILD_OWN_FFTW=ON \
+    -DGMX_FFT_LIBRARY=fftw3 \
+    -DGMX_BUILD_OWN_FFTW=ON \
+    -DGMX_DOUBLE=OFF \
+    -DGMX_GPU=OFF \
+    -DREGRESSIONTEST_DOWNLOAD=OFF \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DGMX_PREFER_STATIC_LIBS=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DGMX_BINARY_SUFFIX= \
+    -DGMX_LIBS_SUFFIX= \
+    -DGMX_MPI=ON \
+    -DCMAKE_C_COMPILER=mpicc \
+    -DCMAKE_CXX_COMPILER=mpicxx \
+    -DGMX_OPENMP=ON \
+    -DGMX_MPI=ON \
+    -DGMX_USE_RDTSCP=ON \
+    -DGMX_SIMD=AVX_512
+
+%post
+    make -j 8 && \
+    make install && \
+    rm -rf /var/tmp/gromacs-2018.6
+
+%post
+    source GMXRC
