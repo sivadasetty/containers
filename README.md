@@ -1,2 +1,2 @@
 # containers
-definitions of MD related containers
+singularity definitions of GROMACS patched with PLUMED
