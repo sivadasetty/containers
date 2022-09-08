@@ -60,4 +60,4 @@ From: centos:7
 %post
     make -j 8 && \
     make install && \
-    rm -rf /var/tmp/gromacs-5.1.2
+    rm -rf /var/tmp/gromacs-5.1.2.tar.gz
