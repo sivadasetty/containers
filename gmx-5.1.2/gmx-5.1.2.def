@@ -1,12 +1,7 @@
-# Installation of GROMACS 2018.6 and PLUMED 2.5.2 on CENTOS                                                             
+# Installation of GROMACS 5.1.2 on CENTOS                                                             
 # header - get centos from docker
 BootStrap: docker
 From: centos:7
-
-# Installation of yum and cmake                                                             
-#%post
-#     apt-get update
-#     apt install -y wget gcc-4.8 g++-4.8 vim make ca-certificates
 
 %post
     yum update -y && \
