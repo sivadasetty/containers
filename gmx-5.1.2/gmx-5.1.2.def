@@ -1,0 +1,122 @@
+# Installation of GROMACS 2018.6 and PLUMED 2.5.2 on CENTOS                                                             
+# header - get centos from docker
+BootStrap: docker
+From: centos:7
+
+# Installation of yum and cmake                                                             
+#%post
+#     apt-get update
+#     apt install -y wget gcc-4.8 g++-4.8 vim make ca-certificates
+
+%post
+    yum update -y && \
+    yum -y install dnf && \
+    dnf makecache --refresh && \
+    rm -rf /var/lib/apt/lists/*
+
+# install required libraries
+%post
+    yum -y install gcc gcc-c++ glib-devel vim-common perl gnupg2 wget make ca-certificates
+
+
+# install cmake version 2.8.12
+%post                                                                                                                  
+    wget -P /var/tmp -q -nc --no-check-certificate https://cmake.org/files/v2.8/cmake-2.8.12-rc4-IRIX64-64.sh && \
+    mkdir -p /usr/local && \
+    sh /var/tmp/cmake-3.15.0-Linux-x86_64.sh --prefix=/usr/local --skip-license && \
+    rm -rf /var/tmp/cmake-3.15-Linux-x86_64.sh
+
+# install fftw 3.3.4
+%post                                                                                                                   
+    wget -P /var/tmp -q -nc --no-check-certificate https://fftw.org/pub/fftw/fftw-3.3.4.tar.gz && \
+    mkdir -p /var/tmp && tar -x -f /var/tmp/fftw-3.3.4.tar.gz -C /var/tmp -z && \
+    cd /var/tmp/fftw-3.3.4 && \
+    ./configure --prefix=/usr/local --enable-float --enable-sse --enable-threads --enable-shared && \
+    make -j 8 && \
+    make install  
+
+# install gromacs
+%post
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp ftp://ftp.gromacs.org/pub/gromacs/gromacs-5.1.2.tar.gz && \
+    mkdir -p /var/tmp && tar -x -f /var/tmp/gromacs-5.1.2.tar.gz -C /var/tmp -z && \
+    cd /var/tmp/gromacs-5.1.2
+
+%post
+    mkdir -p /var/tmp/gromacs-5.1.2/build && \
+    cd /var/tmp/gromacs-5.1.2/build
+
+%post
+    cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DGMX_X11=OFF \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DGMX_BUILD_OWN_FFTW=OFF \
+    -DGMX_FFT_LIBRARY=fftw3 \
+    -DGMX_DOUBLE=OFF \
+    -DGMX_GPU=OFF \
+    -DREGRESSIONTEST_DOWNLOAD=OFF \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DGMX_PREFER_STATIC_LIBS=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DGMX_BINARY_SUFFIX= \
+    -DCMAKE_C_COMPILER=gcc \
+    -DCMAKE_CXX_COMPILER=g++ 
+
+%post
+    make -j 8 && \
+    make install && \
+    rm -rf /var/tmp/gromacs-5.1.2
+
+#%environment
+#    export PATH=/usr/local/bin:$PATH
+#    export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH 
+#    export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+#    export PLUMED_KERNEL=/usr/local/lib/libplumedKernel.so
+#
+#%post
+##environment
+#    export PATH=/usr/local/bin:$PATH                                                                                    
+#    export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH                                                                    
+#    export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH                                                              
+#    export PLUMED_KERNEL=/usr/local/lib/libplumedKernel.so
+#    plumed patch -p -e gromacs-2018.6
+#
+#%post
+#    mkdir -p /var/tmp/gromacs-2018.6/build && \
+#    cd /var/tmp/gromacs-2018.6/build
+#
+#%post
+#    cmake .. \
+#    -DCMAKE_BUILD_TYPE=Release \
+#    -DGMX_X11=OFF \
+#    -DCMAKE_INSTALL_PREFIX=/usr/local \
+#    -DGMX_BUILD_OWN_FFTW=ON \
+#    -DGMX_FFT_LIBRARY=fftw3 \
+#    -DGMX_BUILD_OWN_FFTW=ON \
+#    -DGMX_DOUBLE=OFF \
+#    -DGMX_GPU=ON \
+#    -DREGRESSIONTEST_DOWNLOAD=OFF \
+#    -DBUILD_SHARED_LIBS=OFF \
+#    -DGMX_PREFER_STATIC_LIBS=ON \
+#    -DGMX_DEFAULT_SUFFIX=OFF \
+#    -DGMX_BINARY_SUFFIX= \
+#    -DGMX_LIBS_SUFFIX= \
+#    -DGMX_MPI=ON \
+#    -DCMAKE_C_COMPILER=mpicc \
+#    -DCMAKE_CXX_COMPILER=mpicxx \
+#    -DGMX_OPENMP=ON \
+#    -DGMX_MPI=ON \
+#    -DGMX_USE_RDTSCP=ON \
+#    -DGMX_SIMD=AVX_512 \
+#    -DGMX_USE_NVML=on \
+#    -DNVML_INCLUDE_DIR=/usr/local/cuda/include \
+#    -DNVML_LIBRARY=/usr/local/cuda/lib64/stubs/libnvidia-ml.so \
+#    -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+#
+#%post
+#    make -j 8 && \
+#    make install && \
+#    rm -rf /var/tmp/gromacs-2018.6
+#
+#%post
+#    source GMXRC
