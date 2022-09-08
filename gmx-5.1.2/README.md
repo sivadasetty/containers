@@ -1,7 +1,6 @@
-#### Author - Siva Dasetty
+###### Author - Siva Dasetty
 
-#### About - Install GROMACS-5.1.2 on CentOS 7 and run custom analysis codes
-#### Tested with singularity version 3.7.2 on Ubuntu 20.4
+###### About - Install GROMACS-5.1.2 on CentOS 7 and run custom analysis codes. Tested with singularity version 3.7.2 on Ubuntu 20.4
 
 #### Perform this on a machine with sudo priveleges
 1. sudo singularity build gmx-5.1.2.sif gmx-5.1.2.def
