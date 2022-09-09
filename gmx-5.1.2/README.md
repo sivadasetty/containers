@@ -5,7 +5,7 @@
 ###### Perform this on a machine with sudo privileges
 1. `sudo singularity build gmx-5.1.2.sif gmx-5.1.2.def`
 
-###### For compiling analysis codes - [examples - request access](https://github.com/sivadasetty/2019-clemson-research-codes)
+###### For compiling analysis codes - [examples (request access)](https://github.com/sivadasetty/2019-clemson-research-codes)
 1. `singularity shell gmx-5.1.2.sif`
 2. `source /usr/local/bin/GMXRC`
 3. `mkdir analysis`
