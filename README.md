@@ -1,2 +1,2 @@
-# containers
-singularity definitions of GROMACS patched with PLUMED
+Singularity definitions of GROMACS patched with PLUMED
+---
